@@ -27,8 +27,8 @@ struct Config parse_args(int argc, char* argv[]) {
             cfg.charset = argv[++i];
         } else if (arg == "--target_digest") {
             cfg.target_digest = argv[++i];
-        } else if (arg == "--use_rules") {
-            cfg.use_rules = true;
+        } else if (arg == "--rules") {
+            cfg.rules = argv[++i];
         } else {
             std::cerr << "Unknown argument: " << arg << std::endl;
             exit(1);
@@ -68,6 +68,11 @@ void validate_config(const Config& cfg) {
         std::cerr << "Error: threads must be > 0\n";
         exit(1);
     }
+
+    if (cfg.rules != "none" && cfg.rules != "basic" && cfg.rules != "advanced") {
+        std::cerr << "Error: rules must be 'none', 'basic', or 'advanced'\n";
+        exit(1);
+    }
 }
 
 int main (int argc, char* argv[]) {
@@ -81,7 +86,7 @@ int main (int argc, char* argv[]) {
 
     if (cfg.mode == "dict") {
         std::cout << "Wordlist: " << cfg.wordlist << "\n";
-        std::cout << "Use rules: " << (cfg.use_rules ? "yes" : "no") << std::endl;
+        std::cout << "Rules " << cfg.rules << "\n"; 
     }
 
     std::cout << "Target Digest: " << cfg.target_digest << std::endl;

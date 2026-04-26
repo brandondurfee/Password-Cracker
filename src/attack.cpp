@@ -16,7 +16,9 @@ Cracker::Cracker(struct Config& cfg) {
     for (int i = 0; i < cfg.length; i++)
         total *= cfg.charset.length();
 
-    ruleset = {append1, append2, append3, capitalize, uppercase, leete, leeta, leeto, appendexcl};
+    if (cfg.rules == "basic")
+        ruleset = {append1, append2, append3, capitalize, uppercase, leete, leeta, leeto, appendexcl};
+
     this->total = total;
 }
 
@@ -109,16 +111,14 @@ struct CrackResult Cracker::crack_cpu_dict() {
         }
 
         // apply ruleset
-        if (cfg.use_rules) {
-            for (const auto& rule : ruleset) {
-                std::string w = rule(word);
-                MD5((unsigned char*) w.c_str(), w.size(), digest);
+        for (const auto& rule : ruleset) {
+            std::string w = rule(word);
+            MD5((unsigned char*) w.c_str(), w.size(), digest);
 
-                if (memcmp(digest, target_digest, MD5_DIGEST_LENGTH) == 0) {
-                    memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
-                    result.plaintext = w;
-                    return result;
-                }
+            if (memcmp(digest, target_digest, MD5_DIGEST_LENGTH) == 0) {
+                memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
+                result.plaintext = w;
+                return result;
             }
         }
     }
