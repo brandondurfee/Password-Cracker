@@ -14,6 +14,7 @@ public:
 private:
     struct Config cfg;
     std::string hash;
+    unsigned long long total;
 
     /* different ways to crack the password called by crackPassword */
     // 1. crack with CPU brute force
@@ -26,7 +27,7 @@ private:
     struct CrackResult crack_gpu_brute();
 
     // function to turn the index into a generated password
-    void indexToPassword(int index, char* buf, int length);
+    void indexToPassword(int index, unsigned char* buf, int length);
 };
 
 

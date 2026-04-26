@@ -1,12 +1,27 @@
 #include "attack.h"
-#include <iostream>
-#include <cmath>
+#include "utils.h"
 
+#include <cstring>
+#include <openssl/md5.h>
+
+/***
+* constructor to create a Cracker class
+*/
 Cracker::Cracker(struct Config& cfg) {
     this->cfg = cfg;
+
+    // total number of different problem spaces given charset size and length of password (charset_size^length)
+    unsigned long long total = 1;
+    for (int i = 0; i < cfg.length; i++)
+        total *= cfg.charset.length();
+
+    this->total = total;
 }
 
-void Cracker::indexToPassword(int idx, char* out, int length) {
+/**
+* use a unique index to create a password
+*/
+void Cracker::indexToPassword(int idx, unsigned char* out, int length) {
     std::string charset = cfg.charset;
     int base = charset.length();
 
@@ -16,34 +31,48 @@ void Cracker::indexToPassword(int idx, char* out, int length) {
     }
 }
 
+/*
+* 
+*/
 struct CrackResult Cracker::crackPassword() {
-    return crack_cpu_brute();
-}
+    struct CrackResult result;
+    if (cfg.mode == "brute") {
+        if (cfg.use_gpu) {
 
-bool bufcmp(char* buf1, char* buf2, int length) {
-    for (int i = 0; i < length; i++) {
-        if (buf1[i] != buf2[i])
-            return false;
+        } else {
+            result = crack_cpu_brute();
+        }
+    } else {
+        
     }
-
-    return true;
+    
+    return result;
 }
+
 
 struct CrackResult Cracker::crack_cpu_brute() {
-    // std::cout << "hello world\n";
-    int total = std::pow(cfg.charset.length(), cfg.length);
-    char buf[4];
-    char golden[4] = {'t', 'w', 'i', 'n'};
+    unsigned char buf[cfg.length + 1];
+    buf[cfg.length] = '\0';
+
+    unsigned char digest[MD5_DIGEST_LENGTH];
+    unsigned char target_digest[MD5_DIGEST_LENGTH];
+
+    hex_to_bytes(cfg.target_digest, target_digest);
+
+    struct CrackResult result;
+
     for (int i = 0; i < total; i++) {
-        indexToPassword(i, buf, 4);
-        if (bufcmp(buf, golden, 4)) {
-            std::cout << "FOUND IT\n";
-            break;
+        indexToPassword(i, buf, cfg.length);
+
+        MD5(buf, cfg.length, digest);
+
+        if (memcmp(digest, target_digest, MD5_DIGEST_LENGTH) == 0) {
+            memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
+            result.plaintext = std::string((char*) buf);
+            return result;
         }
     }
-    struct CrackResult res;
-    res.plaintext = buf;
-    res.hash = "hashme";
 
-    return res;
+    result.plaintext = "not found";
+    return result;
 }

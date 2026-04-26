@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <openssl/md5.h>
 
 
 enum class CrackerType {brute, dict};
@@ -12,11 +13,12 @@ struct Config {
     int length = 4;
     bool use_gpu = false;
     std::string wordlist;
-    std::string target;
+    std::string target_digest;
+    bool use_digest = true;
     std::string charset = "abcdefghijklmnopqrstuvwxyz";
 };
 
 struct CrackResult {
     std::string plaintext;
-    std::string hash;
+    unsigned char digest[MD5_DIGEST_LENGTH];
 };

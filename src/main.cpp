@@ -1,8 +1,11 @@
 #include <iostream>
 #include <string>
+#include <iomanip>
+#include <sstream>
 
 #include "config.h"
 #include "attack.h"
+#include "utils.h"
 
 struct Config parse_args(int argc, char* argv[]) {
     Config cfg;
@@ -22,6 +25,8 @@ struct Config parse_args(int argc, char* argv[]) {
             cfg.target = argv[++i];
         } else if (arg == "--charset") {
             cfg.charset = argv[++i];
+        } else if (arg == "--target_digest") {
+            cfg.target_digest = argv[++i];
         } else {
             std::cerr << "Unknown argument: " << arg << std::endl;
             exit(1);
@@ -47,8 +52,13 @@ void validate_config(const Config& cfg) {
         exit(1);
     }
 
-    if (cfg.target == "") {
-        std::cerr << "Error: target must be a non-null string\n";
+    if (cfg.target_digest == "") {
+        std::cerr << "Error: target_digest must be a non-null string\n";
+        exit(1);
+    }
+
+    if (cfg.target_digest.size() != MD5_DIGEST_LENGTH * 2) {
+        std::cerr << "Error: please ensure target_digest is a valid 16 Byte md5 digest\n";
         exit(1);
     }
 
@@ -71,16 +81,18 @@ int main (int argc, char* argv[]) {
         std::cout << "Wordlist: " << cfg.wordlist << "\n";
     }
 
-    std::cout << "Target: " << cfg.target << std::endl;
+    std::cout << "Target Digest: " << cfg.target << std::endl;
 
+    Cracker cracker(cfg);
     // dispatch
     if (cfg.mode == "brute") {
         if (cfg.use_gpu) {
             // run CUDA brute force
+
         } else {
             // run CPU brute force
-            Cracker cracker(cfg);
-            cracker.crackPassword();
+            struct CrackResult res = cracker.crackPassword();
+            std::cout << "hash: " << pprint_digest(res.digest) << ", plaintext: " << res.plaintext << std::endl; 
         }
     } else if (cfg.mode == "dict") {
         // run dictionary attack
