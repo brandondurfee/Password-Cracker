@@ -2,6 +2,7 @@
 #include <string>
 
 #include "config.h"
+#include "attack.h"
 
 struct Config parse_args(int argc, char* argv[]) {
     Config cfg;
@@ -12,13 +13,15 @@ struct Config parse_args(int argc, char* argv[]) {
         if (arg == "--mode") {
             cfg.mode = argv[++i];
         } else if (arg == "--threads") {
-            cfg.mode == std::stoi(argv[++i]);
+            cfg.threads = std::stoi(argv[++i]);
         } else if (arg == "--gpu") {
             cfg.use_gpu = true;
         } else if (arg == "--wordlist") {
             cfg.wordlist = argv[++i];
         } else if (arg == "--target") {
             cfg.target = argv[++i];
+        } else if (arg == "--charset") {
+            cfg.charset = argv[++i];
         } else {
             std::cerr << "Unknown argument: " << arg << std::endl;
             exit(1);
@@ -28,7 +31,7 @@ struct Config parse_args(int argc, char* argv[]) {
     return cfg;
 }
 
-void validate_config(const Config& config) {
+void validate_config(const Config& cfg) {
     if (cfg.mode != "brute" && cfg.mode != "dict") {
         std::cerr << "Error: --mode must be 'brute' or 'dict'\n";
         exit(1);
@@ -44,7 +47,7 @@ void validate_config(const Config& config) {
         exit(1);
     }
 
-    if (target == "") {
+    if (cfg.target == "") {
         std::cerr << "Error: target must be a non-null string\n";
         exit(1);
     }
@@ -76,6 +79,8 @@ int main (int argc, char* argv[]) {
             // run CUDA brute force
         } else {
             // run CPU brute force
+            Cracker cracker(cfg);
+            cracker.crackPassword();
         }
     } else if (cfg.mode == "dict") {
         // run dictionary attack
