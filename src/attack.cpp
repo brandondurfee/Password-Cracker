@@ -1,5 +1,6 @@
 #include "attack.h"
 #include "utils.h"
+#include "dict.h"
 
 #include <cstring>
 #include <openssl/md5.h>
@@ -15,6 +16,7 @@ Cracker::Cracker(struct Config& cfg) {
     for (int i = 0; i < cfg.length; i++)
         total *= cfg.charset.length();
 
+    ruleset = {append1, append2, append3, capitalize, uppercase, leete, leeta, leeto, appendexcl};
     this->total = total;
 }
 
@@ -96,15 +98,30 @@ struct CrackResult Cracker::crack_cpu_dict() {
     struct CrackResult result;
 
     std::vector<std::string> wordlist = load_wordlist(cfg.wordlist);
-    for (int i = 0; i < wordlist.size(); i++) {
-        MD5((unsigned char*) wordlist.at(i).c_str(), wordlist.at(i).size(), digest);
+    for (const auto& word : wordlist) {
 
+        MD5((unsigned char*) word.c_str(), word.size(), digest);
+        
         if (memcmp(digest, target_digest, MD5_DIGEST_LENGTH) == 0) {
             memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
-            result.plaintext = wordlist.at(i);
+            result.plaintext = word;
             return result;
         }
-    }
 
+        // apply ruleset
+        if (cfg.use_rules) {
+            for (const auto& rule : ruleset) {
+                std::string w = rule(word);
+                MD5((unsigned char*) w.c_str(), w.size(), digest);
+
+                if (memcmp(digest, target_digest, MD5_DIGEST_LENGTH) == 0) {
+                    memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
+                    result.plaintext = w;
+                    return result;
+                }
+            }
+        }
+    }
+    result.plaintext = "not found";
     return result;
 }

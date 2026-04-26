@@ -14,7 +14,7 @@ struct Config {
     bool use_gpu = false;
     std::string wordlist;
     std::string target_digest;
-    bool use_digest = true;
+    bool use_rules = false;
     std::string charset = "abcdefghijklmnopqrstuvwxyz";
 };
 

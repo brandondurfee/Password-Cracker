@@ -3,7 +3,9 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "config.h"
+
 
 class Cracker {
 public:
@@ -15,6 +17,10 @@ private:
     struct Config cfg;
     std::string hash;
     unsigned long long total;
+    
+    // vector with functions that apply rules
+    // functions return a new string with rule applied, and original string as the parameter
+    std::vector<std::string(*)(const std::string&)> ruleset;
 
     /* different ways to crack the password called by crackPassword */
     // 1. crack with CPU brute force

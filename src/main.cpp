@@ -27,6 +27,8 @@ struct Config parse_args(int argc, char* argv[]) {
             cfg.charset = argv[++i];
         } else if (arg == "--target_digest") {
             cfg.target_digest = argv[++i];
+        } else if (arg == "--use_rules") {
+            cfg.use_rules = true;
         } else {
             std::cerr << "Unknown argument: " << arg << std::endl;
             exit(1);
@@ -79,6 +81,7 @@ int main (int argc, char* argv[]) {
 
     if (cfg.mode == "dict") {
         std::cout << "Wordlist: " << cfg.wordlist << "\n";
+        std::cout << "Use rules: " << (cfg.use_rules ? "yes" : "no") << std::endl;
     }
 
     std::cout << "Target Digest: " << cfg.target_digest << std::endl;
