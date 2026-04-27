@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cuda_runtime.h>
 
-void run_cuda_bruteforce(
+void crack_kernel(
     uint64_t total,
     int length,
     const char* charset,
@@ -11,7 +11,5 @@ void run_cuda_bruteforce(
     char* result,
     bool& found
 );
-
-void launch_hello();
 
 void launch_md5();

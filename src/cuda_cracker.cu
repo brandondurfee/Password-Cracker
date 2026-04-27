@@ -1,22 +1,23 @@
 #include "cuda_cracker.h"
-#include "md5.h"
-
 #include <stdio.h>
 
-__device__
-void devfunc() {
-    printf("Hello i'm here\n");
-}
+/**************************************************************
+ * MD5 declarations
+ * ************************************************************/
+/* Any 32-bit or wider unsigned integer data type will do */
+typedef unsigned int MD5_u32plus;
 
-__global__ void hello() {
-    devfunc();
-    printf("Hello from thread%d\n", threadIdx.x);
-}
+typedef struct {
+	MD5_u32plus lo, hi;
+	MD5_u32plus a, b, c, d;
+	unsigned char buffer[64];
+	MD5_u32plus block[16];
+} MD5_CTX;
 
-void launch_hello() {
-    hello<<<1, 10>>>();
-    cudaDeviceSynchronize();
-}
+__device__ void MD5_Init(MD5_CTX *ctx);
+__device__ void MD5_Update(MD5_CTX *ctx, const void *data, unsigned long size);
+__device__ void MD5_Final(unsigned char *result, MD5_CTX *ctx);
+/**************************************************************/
 
 __global__
 void md5() {
@@ -33,8 +34,8 @@ void md5() {
 }
 
 void launch_md5() {
-    md5<<<1, 1>>>();
-    cudaDeviceSynchronize();
+	md5<<<1,1>>>();
+	cudaDeviceSynchronize();
 }
 
 __global__ 
