@@ -77,7 +77,8 @@ struct CrackResult Cracker::crack_cpu_brute() {
     
     #pragma omp parallel for num_threads(cfg.threads)
     for (int i = 0; i < total; i++) {
-        if (found.load()) continue;
+        if ((i & 0xFFF) == 0 && found.load()) continue;
+        
         unsigned char buf[cfg.length + 1];
         buf[cfg.length] = '\0';
         unsigned char digest[MD5_DIGEST_LENGTH];
@@ -85,13 +86,10 @@ struct CrackResult Cracker::crack_cpu_brute() {
         indexToPassword(i, buf, cfg.length);
 
         if (check_candidate((char*)buf, cfg.length, digest, target_digest)) {
-            found.store(true);
-
-            #pragma omp critical
-            {
-            result.match = true;
-            result.plaintext = std::string((char*)buf);
-            memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
+            if (!found.exchange(true)) {
+                result.match = true;
+                result.plaintext = std::string((char*)buf);
+                memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
             }
         }
     }
