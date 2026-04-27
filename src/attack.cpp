@@ -111,10 +111,8 @@ struct CrackResult Cracker::crack_cpu_dict() {
 
         // get the word in the wordlist
         const std::string& word = wordlist[i];
-        
-        // get the digest of the chosen word in the wordlist
-        // MD5((unsigned char*) word.c_str(), word.size(), digest);
 
+        // compare the word's digest wtih the target_digest
         if (check_candidate(word.c_str(), word.size(), digest, target_digest)) {
             found.store(true);
             
@@ -131,9 +129,11 @@ struct CrackResult Cracker::crack_cpu_dict() {
         if (cfg.rules == "basic") {
             for (const auto& rule : ruleset) {
                 if (found.load()) break;
-
-                std::string rulew = rule(word);
                 
+                // apply the rule to the word
+                std::string rulew = rule(word);
+
+                // compare the rulew's digest to the target_digest
                 if (check_candidate(rulew.c_str(), rulew.size(), digest, target_digest)) {
                     found.store(true);
 
