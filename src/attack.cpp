@@ -22,7 +22,7 @@ inline bool check_candidate(const char* buf, int len, unsigned char* digest, uns
 Cracker::Cracker(struct Config& cfg) {
     this->cfg = cfg;
 
-    // total number of different problem spaces given charset size and length of password (charset_size^length)
+    // size of the problem space given charset size and length of password (charset_size^length)
     unsigned long long total = 1;
     for (int i = 0; i < cfg.length; i++)
         total *= cfg.charset.length();
@@ -31,6 +31,13 @@ Cracker::Cracker(struct Config& cfg) {
         ruleset = {append1, append2, append3, capitalize, uppercase, leete, leeta, leeto, appendexcl};
 
     this->total = total;
+}
+
+/***
+ * get the total complexity of the password
+ */
+unsigned long long Cracker::getTotal() {
+    return total;
 }
 
 /**
@@ -78,7 +85,7 @@ struct CrackResult Cracker::crack_cpu_brute() {
     
     std::atomic<bool> found(false);
     
-    #pragma omp parallel for schedule(static)
+    #pragma omp parallel for schedule(static) num_threads(cfg.threads)
     for (int i = 0; i < total; i++) {
         if ((i & 0xFFF) == 0 && found.load()) continue;
 

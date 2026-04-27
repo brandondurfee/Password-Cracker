@@ -13,6 +13,8 @@ public:
     
     // crack the password based on the config
     struct CrackResult crackPassword();
+
+    unsigned long long getTotal();
 private:
     struct Config cfg;
     std::string hash;
