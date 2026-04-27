@@ -104,7 +104,10 @@ struct CrackResult Cracker::crack_cpu_brute() {
         }
     }
 
-    if (!result.match) result.plaintext = "not found";
+    if (!result.match) {
+        result.plaintext = "not found";
+        result.match = false;
+    }
     return result;
 }
 
@@ -159,7 +162,10 @@ struct CrackResult Cracker::crack_cpu_dict() {
         }
     }
 
-    if (!result.match) result.plaintext = "password not found";
+    if (!result.match) {
+        result.plaintext = "password not found";
+        result.match = false;
+    }
     return result;
 }
 

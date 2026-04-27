@@ -52,8 +52,14 @@ Metrics run_and_measure(Config cfg) {
 
     // print
     std::cout << std::endl << "***RESULTS***" << std::endl;
-    std::cout << "  discovered password: " << res.plaintext << std::endl; 
-    std::cout << "  discovered hash: " << pprint_digest(res.digest) << std::endl;
+    if (res.match) {
+        std::cout << "  discovered password: " << res.plaintext << std::endl; 
+        std::cout << "  discovered hash: " << pprint_digest(res.digest) << std::endl;
+    } else {
+        std::cout << "  discovered password: " << "NOT FOUND" << std::endl;
+        std::cout << "  discovered hash: " << "NOT FOUND" << std::endl;
+    }
+    
     std::cout << "  seconds to crack: " << m.seconds << std::endl;
     std::cout << "  (ignore if early exit) hash/sec: " << m.hashes_per_sec << std::endl;
     std::cout << std::endl;

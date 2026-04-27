@@ -23,7 +23,7 @@ struct Config {
 struct CrackResult {
     std::string plaintext;
     unsigned char digest[MD5_DIGEST_LENGTH];
-    bool match;
+    bool match = false;
 };
 
 struct Metrics {
