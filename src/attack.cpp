@@ -75,10 +75,10 @@ struct CrackResult Cracker::crack_cpu_brute() {
     
     std::atomic<bool> found(false);
     
-    #pragma omp parallel for num_threads(cfg.threads)
+    #pragma omp parallel for schedule(static)
     for (int i = 0; i < total; i++) {
         if ((i & 0xFFF) == 0 && found.load()) continue;
-        
+
         unsigned char buf[cfg.length + 1];
         buf[cfg.length] = '\0';
         unsigned char digest[MD5_DIGEST_LENGTH];
@@ -110,6 +110,7 @@ struct CrackResult Cracker::crack_cpu_dict() {
     std::vector<std::string> wordlist = load_wordlist(cfg.wordlist);
     std::atomic<bool> found(false);
     
+    // dynamic scheduling due to asymmetrical workload
     #pragma omp parallel for schedule(dynamic, 1000)
     for (int i = 0; i < wordlist.size(); i++) {
         if ((i & 0xFFF) == 0 && found.load()) continue;
