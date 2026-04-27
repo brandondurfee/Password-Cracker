@@ -1,6 +1,6 @@
 TODO:
-1. parallelize the CPU brute threading cracker using OpenMP
-2. add dictionary attack using wordlist (passed in as a file) and dictionary rules
+1. parallelize the CPU brute threading cracker using OpenMP [DONE]
+2. add dictionary attack using wordlist (passed in as a file) and dictionary rules [DONE]
 3. add GPU brute force attack
 
 Extensions:
@@ -12,12 +12,12 @@ Extensions:
 
 Examples:
 
-Compile:
+Compile (need to use llvm compiler for clang++ on Apple silicon that supports libomp)
 
 ```bash
-g++ main.cpp attack.cpp utils.cpp dict.cpp -I/opt/homebrew/opt/openssl/include \
+/opt/homebrew/opt/llvm/bin/clang++ main.cpp attack.cpp utils.cpp dict.cpp -I/opt/homebrew/opt/openssl/include \
              -L/opt/homebrew/opt/openssl/lib \
-             -lssl -lcrypto
+             -lssl -lcrypto -fopenmp
 ```
 
 1. Use brute force on the CPU with length of 5 on hello's md5sum
