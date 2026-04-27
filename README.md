@@ -12,12 +12,20 @@ Extensions:
 
 Examples:
 
-Compile (need to use llvm compiler for clang++ on Apple silicon that supports libomp)
+Compile
+*APPLE SILICON* (need to use llvm compiler for clang++ on Apple silicon that supports libomp)
 
 ```bash
 /opt/homebrew/opt/llvm/bin/clang++ main.cpp attack.cpp utils.cpp dict.cpp -I/opt/homebrew/opt/openssl/include \
              -L/opt/homebrew/opt/openssl/lib \
              -lssl -lcrypto -fopenmp
+```
+
+Compile
+*Linux/Pace*
+
+```bash
+g++ main.cpp attack.cpp utils.cpp dict.cpp -lssl -lcrypto -fopenmp
 ```
 
 1. Use brute force on the CPU with length of 5 on hello's md5sum

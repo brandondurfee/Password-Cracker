@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iomanip>
 #include <openssl/md5.h>
+#include <vector>
 
 std::string pprint_digest(unsigned char* digest);
 
