@@ -2,10 +2,61 @@
 #include <string>
 #include <iomanip>
 #include <sstream>
+#include <chrono>
 
 #include "config.h"
 #include "attack.h"
 #include "utils.h"
+
+// foward declarations
+struct Config parse_args(int argc, char* argv[]);
+void validate_config(const Config& cfg);
+Metrics run_and_measure(Config cfg);
+
+int main (int argc, char* argv[]) {
+    Config cfg = parse_args(argc, argv);
+    validate_config(cfg);
+
+    std::cout << "Mode: " << cfg.mode << "\n";
+    std::cout << "Threads: " << cfg.threads << "\n";
+    std::cout << "Length: " << cfg.length << "\n";
+    std::cout << "GPU: " << (cfg.use_gpu ? "yes" : "no") << "\n";
+
+    if (cfg.mode == "dict") {
+        std::cout << "Wordlist: " << cfg.wordlist << "\n";
+        std::cout << "Rules " << cfg.rules << "\n"; 
+    }
+
+    std::cout << "Target Digest: " << cfg.target_digest << std::endl;
+
+    run_and_measure(cfg);
+    return 0;
+}
+
+Metrics run_and_measure(Config cfg) {
+    // create a password cracker with the config specified by the user
+    Cracker cracker(cfg);
+
+    // start timing
+    auto start = std::chrono::high_resolution_clock::now();
+
+    auto res = cracker.crackPassword();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    double seconds = std::chrono::duration<double>(end - start).count();
+
+    Metrics m;
+    m.seconds = seconds;
+    m.hashes_per_sec = cracker.getTotal() / seconds;
+
+    // print
+    std::cout << std::endl << "RESULTS:" << std::endl;
+    std::cout << "\tdiscovered password: " << res.plaintext << std::endl; 
+    std::cout << "\tdiscovered hash: " << pprint_digest(res.digest) << std::endl;
+    std::cout << "\tseconds to crack: " << m.seconds << std::endl;
+    std::cout << "\t(ignore if early exit) hash/sec: " << m.hashes_per_sec << std::endl;
+    return m;
+}
 
 struct Config parse_args(int argc, char* argv[]) {
     Config cfg;
@@ -75,26 +126,4 @@ void validate_config(const Config& cfg) {
         std::cerr << "Error: rules must be 'none', 'basic', or 'advanced'\n";
         exit(1);
     }
-}
-
-int main (int argc, char* argv[]) {
-    Config cfg = parse_args(argc, argv);
-    validate_config(cfg);
-
-    std::cout << "Mode: " << cfg.mode << "\n";
-    std::cout << "Threads: " << cfg.threads << "\n";
-    std::cout << "Length: " << cfg.length << "\n";
-    std::cout << "GPU: " << (cfg.use_gpu ? "yes" : "no") << "\n";
-
-    if (cfg.mode == "dict") {
-        std::cout << "Wordlist: " << cfg.wordlist << "\n";
-        std::cout << "Rules " << cfg.rules << "\n"; 
-    }
-
-    std::cout << "Target Digest: " << cfg.target_digest << std::endl;
-
-    Cracker cracker(cfg);
-    struct CrackResult res = cracker.crackPassword();
-    std::cout << "hash: " << pprint_digest(res.digest) << ", plaintext: " << res.plaintext << std::endl; 
-    return 0;
 }
