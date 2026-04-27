@@ -68,27 +68,35 @@ struct CrackResult Cracker::crackPassword() {
 * crack the password brute force with the CPU
 */
 struct CrackResult Cracker::crack_cpu_brute() {
-    unsigned char buf[cfg.length + 1];
-    buf[cfg.length] = '\0';
-
-    unsigned char digest[MD5_DIGEST_LENGTH];
     unsigned char target_digest[MD5_DIGEST_LENGTH];
-
     hex_to_bytes(cfg.target_digest, target_digest);
 
     struct CrackResult result;
-
+    
+    std::atomic<bool> found(false);
+    
+    #pragma omp parallel for num_threads(cfg.threads)
     for (int i = 0; i < total; i++) {
+        if (found.load()) continue;
+        unsigned char buf[cfg.length + 1];
+        buf[cfg.length] = '\0';
+        unsigned char digest[MD5_DIGEST_LENGTH];
+
         indexToPassword(i, buf, cfg.length);
 
-        if (check_candidate((char*)buf, cfg.length + 1, digest, target_digest)) {
+        if (check_candidate((char*)buf, cfg.length, digest, target_digest)) {
+            found.store(true);
+
+            #pragma omp critical
+            {
             result.match = true;
             result.plaintext = std::string((char*)buf);
             memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
+            }
         }
     }
 
-    result.plaintext = "not found";
+    if (!result.match) result.plaintext = "not found";
     return result;
 }
 
@@ -96,29 +104,26 @@ struct CrackResult Cracker::crack_cpu_brute() {
 * crack the password with the CPU using a dictionary attack
 */
 struct CrackResult Cracker::crack_cpu_dict() {
+    unsigned char target_digest[MD5_DIGEST_LENGTH];
+    hex_to_bytes(cfg.target_digest, target_digest); 
+    
     struct CrackResult result;
 
     std::vector<std::string> wordlist = load_wordlist(cfg.wordlist);
     std::atomic<bool> found(false);
     
-    #pragma omp parallel for num_threads(cfg.threads)
+    #pragma omp parallel for schedule(dynamic, 1000)
     for (int i = 0; i < wordlist.size(); i++) {
-        if (found.load()) continue;
+        if ((i & 0xFFF) == 0 && found.load()) continue;
 
         unsigned char digest[MD5_DIGEST_LENGTH];
-        unsigned char target_digest[MD5_DIGEST_LENGTH];
-        hex_to_bytes(cfg.target_digest, target_digest); 
 
         // get the word in the wordlist
         const std::string& word = wordlist[i];
 
         // compare the word's digest wtih the target_digest
-        if (check_candidate(word.c_str(), word.size(), digest, target_digest)) {
-            found.store(true);
-            
-            // critical region to prevent overwrites from other threads when saving the result
-            #pragma omp critical
-            {
+        if (check_candidate(word.c_str(), word.size(), digest, target_digest)) {            
+            if (!found.exchange(true)) {
                 result.plaintext = word;
                 memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
                 result.match = true; 
@@ -135,10 +140,7 @@ struct CrackResult Cracker::crack_cpu_dict() {
 
                 // compare the rulew's digest to the target_digest
                 if (check_candidate(rulew.c_str(), rulew.size(), digest, target_digest)) {
-                    found.store(true);
-
-                    #pragma omp critical
-                    {
+                    if (!found.exchange(true)) {
                         result.plaintext = rulew;
                         memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
                         result.match = true;
