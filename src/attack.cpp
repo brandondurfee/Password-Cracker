@@ -4,6 +4,15 @@
 
 #include <cstring>
 #include <openssl/md5.h>
+#include <atomic>
+
+/*
+* inline bool helper
+*/
+inline bool check_candidate(const char* buf, int len, unsigned char* digest, unsigned char* target) {
+    MD5((unsigned char*)buf, len, digest);
+    return memcmp(digest, target, MD5_DIGEST_LENGTH) == 0;
+}
 
 /***
 * constructor to create a Cracker class
@@ -72,8 +81,11 @@ struct CrackResult Cracker::crack_cpu_brute() {
     for (int i = 0; i < total; i++) {
         indexToPassword(i, buf, cfg.length);
 
-        result = compareDigest(buf, target_digest);
-        if (result.match) return result;
+        if (check_candidate((char*)buf, cfg.length + 1, digest, target_digest)) {
+            result.match = true;
+            result.plaintext = std::string((char*)buf);
+            memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
+        }
     }
 
     result.plaintext = "not found";
@@ -84,47 +96,58 @@ struct CrackResult Cracker::crack_cpu_brute() {
 * crack the password with the CPU using a dictionary attack
 */
 struct CrackResult Cracker::crack_cpu_dict() {
-    unsigned char digest[MD5_DIGEST_LENGTH];
-    unsigned char target_digest[MD5_DIGEST_LENGTH];
-
-    hex_to_bytes(cfg.target_digest, target_digest); 
-
     struct CrackResult result;
 
     std::vector<std::string> wordlist = load_wordlist(cfg.wordlist);
-    for (const auto& word : wordlist) {
-        result = compareDigest(word, target_digest);
-        if (result.match) return result;
+    std::atomic<bool> found(false);
+    
+    #pragma omp parallel for num_threads(cfg.threads)
+    for (int i = 0; i < wordlist.size(); i++) {
+        if (found.load()) continue;
 
-        // apply ruleset
-        for (const auto& rule : ruleset) {
-            std::string rulew = rule(word);
-            result = compareDigest(rulew, target_digest);
-            if (result.match) return result;
+        unsigned char digest[MD5_DIGEST_LENGTH];
+        unsigned char target_digest[MD5_DIGEST_LENGTH];
+        hex_to_bytes(cfg.target_digest, target_digest); 
+
+        // get the word in the wordlist
+        const std::string& word = wordlist[i];
+        
+        // get the digest of the chosen word in the wordlist
+        // MD5((unsigned char*) word.c_str(), word.size(), digest);
+
+        if (check_candidate(word.c_str(), word.size(), digest, target_digest)) {
+            found.store(true);
+            
+            // critical region to prevent overwrites from other threads when saving the result
+            #pragma omp critical
+            {
+                result.plaintext = word;
+                memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
+                result.match = true; 
+            }
+        }
+
+        // apply ruleset if set to 'basic'
+        if (cfg.rules == "basic") {
+            for (const auto& rule : ruleset) {
+                if (found.load()) break;
+
+                std::string rulew = rule(word);
+                
+                if (check_candidate(rulew.c_str(), rulew.size(), digest, target_digest)) {
+                    found.store(true);
+
+                    #pragma omp critical
+                    {
+                        result.plaintext = rulew;
+                        memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
+                        result.match = true;
+                    }
+                }
+            }
         }
     }
-    result.plaintext = "not found";
-    return result;
-}
 
-struct CrackResult Cracker::compareDigest(unsigned char* buf, unsigned char* target_digest) {
-    std::string word = reinterpret_cast<const char*>(buf);
-    return compareDigest(word, target_digest);
-}
-
-struct CrackResult Cracker::compareDigest(const std::string& word, unsigned char* target_digest) {
-    struct CrackResult result;
-    unsigned char digest[MD5_DIGEST_LENGTH];
-
-    MD5((unsigned char*) word.c_str(), word.size(), digest);
-    
-    if (memcmp(digest, target_digest, MD5_DIGEST_LENGTH) == 0) {
-        memcpy(result.digest, digest, MD5_DIGEST_LENGTH);
-        result.plaintext = word;
-        result.match = true;
-    } else {
-        result.match = false;
-    }
-
+    if (!result.match) result.plaintext = "password not found";
     return result;
 }

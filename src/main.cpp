@@ -29,6 +29,8 @@ struct Config parse_args(int argc, char* argv[]) {
             cfg.target_digest = argv[++i];
         } else if (arg == "--rules") {
             cfg.rules = argv[++i];
+        } else if (arg == "--target_digest_file") {
+            cfg.target_digest_file = argv[++i];
         } else {
             std::cerr << "Unknown argument: " << arg << std::endl;
             exit(1);
