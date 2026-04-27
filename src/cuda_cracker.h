@@ -2,14 +2,13 @@
 
 #include <cstdint>
 #include <cuda_runtime.h>
+#include "config.h"
 
-void crack_kernel(
-    uint64_t total,
-    int length,
-    const char* charset,
-    const unsigned char* target,
-    char* result,
-    bool& found
-);
-
-void launch_md5();
+namespace gpu {
+	struct CrackResult launch_crack_kernel(
+		uint64_t total,
+		int length,
+		const char* charset,
+		int base,
+		const unsigned char* target_digest);
+}

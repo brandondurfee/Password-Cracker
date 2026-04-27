@@ -158,8 +158,11 @@ struct CrackResult Cracker::crack_cpu_dict() {
 
 struct CrackResult Cracker::crack_gpu_brute() {
     struct CrackResult res;
+    unsigned char target_digest[MD5_DIGEST_LENGTH];
+    hex_to_bytes(cfg.target_digest, target_digest); 
 
-    launch_md5();
+    res = gpu::launch_crack_kernel(total, cfg.length, cfg.charset.c_str(), 
+                cfg.charset.size(), (const unsigned char*) target_digest);
 
     return res;
 }

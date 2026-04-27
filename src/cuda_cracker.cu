@@ -1,10 +1,13 @@
 #include "cuda_cracker.h"
 #include <stdio.h>
 
+namespace gpu {
 /**************************************************************
  * MD5 declarations
  * ************************************************************/
-/* Any 32-bit or wider unsigned integer data type will do */
+#define MD5_DIGEST_LENGTH 16
+
+ /* Any 32-bit or wider unsigned integer data type will do */
 typedef unsigned int MD5_u32plus;
 
 typedef struct {
@@ -19,33 +22,14 @@ __device__ void MD5_Update(MD5_CTX *ctx, const void *data, unsigned long size);
 __device__ void MD5_Final(unsigned char *result, MD5_CTX *ctx);
 /**************************************************************/
 
-__global__
-void md5() {
+
+/********************************************** Crack CODE **********************************************/
+__device__
+void MD5(const char* word, int length, unsigned char* out) {
     MD5_CTX ctx;
     MD5_Init(&ctx);
-    MD5_Update(&ctx, "hello", 5);
-
-    unsigned char res[16 + 1];
-    res[16] = '\0';
-    MD5_Final(res, &ctx);
-    for (int i = 0; i < 16; i++) {
-        printf("%02x", res[i]);
-    }
-}
-
-void launch_md5() {
-	md5<<<1,1>>>();
-	cudaDeviceSynchronize();
-}
-
-__global__ 
-void crack_kernel() {
-    uint64_t tid = blockIdx.x * blockDim.x + threadIdx.x;
-    uint64_t stride = blockDim.x * gridDim.x;
-
-    // for (uint64_t i = tid; i < total; i += stride) {
-        // try password i
-    // }
+    MD5_Update(&ctx, word, length);
+    MD5_Final(out, &ctx);
 }
 
 __device__
@@ -57,9 +41,17 @@ void indexToPassword(uint64_t idx, char* out, int length,
     }
 }
 
-/****************************
- * MD5 implementation
- ****************************/
+__device__
+int my_memcmp(const void* a, const void* b, int n) {
+    const unsigned char* a1 = (const unsigned char*)a;
+    const unsigned char* b1 = (const unsigned char*)b;
+
+    for (int i = 0; i < n; i++)
+        if (a1[i] != b1[i]) {
+			return 1;
+		}
+    return 0;
+}
 
 
 __device__
@@ -75,6 +67,112 @@ void my_memset(void* dst, unsigned char val, int n) {
     for (int i = 0; i < n; i++) a[i] = val;
 }
 
+// launch crack_kernel which calls md5 on the gpu
+__global__ 
+void crack_kernel(
+	uint64_t total,
+    int length,
+	const char* charset,
+	int base,
+    const unsigned char* target_digest,
+    int* found,
+	char* result_plaintext,
+	unsigned char* result_digest)
+{
+    uint64_t tid = blockIdx.x * blockDim.x + threadIdx.x;
+    uint64_t stride = blockDim.x * gridDim.x;
+
+	char buf[16];
+	unsigned char digest[MD5_DIGEST_LENGTH];
+
+	char to_print[17];
+	to_print[16] = '\0';
+
+    for (uint64_t i = tid; i < total; i += stride) {
+        if (*found) return;
+		indexToPassword(i, buf, length, charset, base);
+		
+		MD5(buf, length, digest);
+
+		if (my_memcmp(digest, target_digest, MD5_DIGEST_LENGTH) == 0) {
+			if (atomicExch(found, 1) == 0) {
+				// write result
+				memcpy(result_plaintext, buf, length);
+				memcpy(result_digest, digest, 16);
+			}
+			return;
+		}
+    }
+}
+
+struct CrackResult launch_crack_kernel(
+		uint64_t total,
+		int length,
+		const char* charset,
+		int base,
+		const unsigned char* target_digest)
+{
+	///// allocate device memory /////
+	unsigned char* d_target_digest;
+	char* d_charset;
+	int* d_found;
+	char* d_result_plaintext;
+	unsigned char* d_result_digest;
+
+	cudaMalloc(&d_target_digest, MD5_DIGEST_LENGTH);
+	cudaMalloc(&d_charset, base);
+	cudaMalloc(&d_found, sizeof(int));
+	cudaMalloc(&d_result_plaintext, length);
+	cudaMalloc(&d_result_digest, MD5_DIGEST_LENGTH);
+
+	// copy data to GPU
+	cudaMemcpy(d_target_digest, target_digest, MD5_DIGEST_LENGTH, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_charset, charset, base, cudaMemcpyHostToDevice);
+	int zero = 0;
+	cudaMemcpy(d_found, &zero, sizeof(int), cudaMemcpyHostToDevice);
+
+	// launch kernel
+	int blockSize = 256;
+	int numBlocks = 512;
+	crack_kernel<<<blockSize, numBlocks>>>(total, length, d_charset, base, d_target_digest, 
+							d_found, d_result_plaintext, d_result_digest);
+	cudaDeviceSynchronize();
+
+	// copy result back
+	int h_found;
+	cudaMemcpy(&h_found, d_found, sizeof(int), cudaMemcpyDeviceToHost);
+
+	// create CrackResult
+	struct CrackResult result;
+	if (h_found) {
+		// get plaintext from device onto host
+		char h_result_plaintext[length + 1];
+		h_result_plaintext[length] = '\0';
+		cudaMemcpy(h_result_plaintext, d_result_plaintext, length, cudaMemcpyDeviceToHost);
+		
+		// get digest from device onto host
+		char h_result_digest[MD5_DIGEST_LENGTH];
+		cudaMemcpy(h_result_digest, d_result_digest, MD5_DIGEST_LENGTH, cudaMemcpyDeviceToHost);
+
+		// write to result
+		result.plaintext = h_result_plaintext;
+		memcpy(result.digest, h_result_digest, MD5_DIGEST_LENGTH);
+		result.match = true;
+		return result;
+	}
+	
+	result.match = false;
+	result.plaintext = "no match found";
+
+	return result;
+}
+/********************************************************************************************/
+
+
+
+/****************************************************************************************************************
+ * MD5 implementation
+ ****************************************************************************************************************/
 
  /*
  * This is an OpenSSL-compatible implementation of the RSA Data Security, Inc.
@@ -341,4 +439,5 @@ void MD5_Final(unsigned char *result, MD5_CTX *ctx)
 	OUT(&result[12], ctx->d)
 
 	my_memset(ctx, 0, sizeof(*ctx));
+}
 }
