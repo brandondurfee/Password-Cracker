@@ -25,3 +25,8 @@ struct CrackResult {
     unsigned char digest[MD5_DIGEST_LENGTH];
     bool match;
 };
+
+struct Metrics {
+    double seconds;
+    double hashes_per_sec;
+};
