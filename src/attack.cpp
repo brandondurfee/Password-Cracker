@@ -159,7 +159,7 @@ struct CrackResult Cracker::crack_cpu_dict() {
 struct CrackResult Cracker::crack_gpu_brute() {
     struct CrackResult res;
 
-    launch_hello();
+    launch_md5();
 
     return res;
 }

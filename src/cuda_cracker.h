@@ -13,3 +13,5 @@ void run_cuda_bruteforce(
 );
 
 void launch_hello();
+
+void launch_md5();
