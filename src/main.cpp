@@ -17,17 +17,18 @@ int main (int argc, char* argv[]) {
     Config cfg = parse_args(argc, argv);
     validate_config(cfg);
 
-    std::cout << "Mode: " << cfg.mode << "\n";
-    std::cout << "Threads: " << cfg.threads << "\n";
-    std::cout << "Length: " << cfg.length << "\n";
-    std::cout << "GPU: " << (cfg.use_gpu ? "yes" : "no") << "\n";
+    std::cout << std::endl << "***CONFIG***" << std::endl;
+    std::cout << "  Mode: " << cfg.mode << "\n";
+    std::cout << "  Threads: " << cfg.threads << "\n";
+    std::cout << "  Length: " << cfg.length << "\n";
+    std::cout << "  GPU: " << (cfg.use_gpu ? "yes" : "no") << "\n";
 
     if (cfg.mode == "dict") {
-        std::cout << "Wordlist: " << cfg.wordlist << "\n";
-        std::cout << "Rules " << cfg.rules << "\n"; 
+        std::cout << "  Wordlist: " << cfg.wordlist << "\n";
+        std::cout << "  Rules " << cfg.rules << "\n"; 
     }
 
-    std::cout << "Target Digest: " << cfg.target_digest << std::endl;
+    std::cout << "  Target Digest: " << cfg.target_digest << std::endl;
 
     run_and_measure(cfg);
     return 0;
@@ -50,11 +51,12 @@ Metrics run_and_measure(Config cfg) {
     m.hashes_per_sec = cracker.getTotal() / seconds;
 
     // print
-    std::cout << std::endl << "RESULTS:" << std::endl;
-    std::cout << "\tdiscovered password: " << res.plaintext << std::endl; 
-    std::cout << "\tdiscovered hash: " << pprint_digest(res.digest) << std::endl;
-    std::cout << "\tseconds to crack: " << m.seconds << std::endl;
-    std::cout << "\t(ignore if early exit) hash/sec: " << m.hashes_per_sec << std::endl;
+    std::cout << std::endl << "***RESULTS***" << std::endl;
+    std::cout << "  discovered password: " << res.plaintext << std::endl; 
+    std::cout << "  discovered hash: " << pprint_digest(res.digest) << std::endl;
+    std::cout << "  seconds to crack: " << m.seconds << std::endl;
+    std::cout << "  (ignore if early exit) hash/sec: " << m.hashes_per_sec << std::endl;
+    std::cout << std::endl;
     return m;
 }
 
