@@ -15,7 +15,7 @@ For context, MD5 is not cryptographically secure, and modern passwords are (hope
 2. --threads: Configure number of threads
 3. --gpu: Use the gpu
 4. --wordlist: Set the path to the wordlist used in dictionary attacks. Wordlist must be newline separated (like ROCKYOU.txt)
-5. --charset: Configure whether to use the default, advanced, or ultra charsets for cracking
+5. --charset: Configure whether to use the default, advanced, ultra, or complete charsets for cracking
 6. --target_digest: The target MD5 hash you are trying to crack
 7. --rules: Configure dictionary rules (none or basic)
 8. --length: the length of the password you are trying to crack
@@ -24,6 +24,7 @@ Charsets:
 1. Default Charset: abcdefghijklmnopqrstuvwxyz
 2. Advanced Charset: abcdefghijklmnopqrstuvwxyz!@*$
 3. Ultra Charset: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@*$
+4. Complete Charset: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@*$0123456789
 
 ### Build: Makefile (Linux)
 
@@ -46,7 +47,7 @@ nvcc -Xcompiler -fopenmp main.cpp cuda_cracker.cu attack.cpp dict.cpp utils.cpp 
 1. Use brute force on the CPU with length of 5 on hello's md5sum
 
 ```bash
-[bdurfee3@atl1-1-03-015-2-0 passwordcracker]$ echo -n "hello" | md5sum
+[bdurfee3@atl1-1-03-015-2-0 passwordcracker]$ echo -n 'hello' | md5sum
 5d41402abc4b2a76b9719d911017c592  -
 
 [bdurfee3@atl1-1-03-015-2-0 passwordcracker]$ ./cracker --mode brute --target_digest 5d41402abc4b2a76b9719d911017c592 --length 5
@@ -89,10 +90,9 @@ nvcc -Xcompiler -fopenmp main.cpp cuda_cracker.cu attack.cpp dict.cpp utils.cpp 
   (ignore if early exit) hash/sec: 90243.6
 ```
 
-3. Use brute force attack on GPU with the ultra charset to crack "Bs*Z@a$"
+3. Use brute force attack on GPU with the ultra charset to crack 'Bs*Z@a$'
 ```bash
-[bdurfee3@atl1-1-03-015-2-0 passwordcracker]$ ./cracker --mode brute --target_digest 6ce8bf115790c2464b4d5028f264aacb --gpu --charset ultra --l
-ength 7
+[bdurfee3@atl1-1-03-015-2-0 passwordcracker]$ ./cracker --mode brute --target_digest 6ce8bf115790c2464b4d5028f264aacb --gpu --charset ultra --length 7
 
 ***CONFIG***
   Mode: brute
@@ -108,6 +108,29 @@ ength 7
   complexity: 1727094849536
   seconds to crack: 134.291
   (ignore if early exit) hash/sec: 1.28609e+10
+```
+
+4. Use brute force GPU with complete charset to crack '$*3@Ba'
+```bash
+[bdurfee3@atl1-1-03-014-30-0 passwordcracker]$ echo -n '$*3@Ba' | md5sum
+6ca49457476b776feecf461804e08464 
+
+[bdurfee3@atl1-1-03-014-30-0 passwordcracker]$ ./cracker --mode brute --length 6 --target_digest 6ca49457476b776feecf461804e08464 --charset complete --gpu
+
+***CONFIG***
+  Mode: brute
+  Threads: 1
+  Length: 6
+  GPU: yes
+  Charset: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@*$0123456789
+  Target Digest: 6ca49457476b776feecf461804e08464
+
+***RESULTS***
+  discovered password: $*3@Ba
+  discovered hash: 6ca49457476b776feecf461804e08464
+  complexity: 82653950016
+  seconds to crack: 7.12116
+  (ignore if early exit) hash/sec: 1.16068e+10
 ```
 
 ### Device info

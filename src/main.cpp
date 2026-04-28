@@ -89,6 +89,8 @@ struct Config parse_args(int argc, char* argv[]) {
                 cfg.charset = "abcdefghijklmnopqrstuvwxyz!@*$";
             else if (std::string(argv[i + 1]) == "ultra")
                 cfg.charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@*$";
+            else if (std::string(argv[i + 1]) == "complete")
+                cfg.charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@*$0123456789";
             ++i;
         } else if (arg == "--target_digest") {
             cfg.target_digest = argv[++i];
