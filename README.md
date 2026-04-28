@@ -2,6 +2,8 @@
 # Password Cracker
 Author: Brandon Durfee
 
+Demo Video: https://www.youtube.com/watch?v=KtLmi5g1FrA
+
 ### About:
 This is a toy pedagogical implementation of a password cracker (like hashcat or john the ripper). It provides password cracking on MD5 hashes, with three different attack types:
 1. Brute force on the CPU
