@@ -124,7 +124,7 @@ struct CrackResult Cracker::crack_cpu_dict() {
     std::atomic<bool> found(false);
     
     // dynamic scheduling due to asymmetrical workload
-    #pragma omp parallel for schedule(dynamic, 1000)
+    #pragma omp parallel for schedule(dynamic, 1000) num_threads(cfg.threads)
     for (int i = 0; i < wordlist.size(); i++) {
         if ((i & 0xFFF) == 0 && found.load()) continue;
 

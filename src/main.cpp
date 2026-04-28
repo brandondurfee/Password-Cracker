@@ -22,6 +22,7 @@ int main (int argc, char* argv[]) {
     std::cout << "  Threads: " << cfg.threads << "\n";
     std::cout << "  Length: " << cfg.length << "\n";
     std::cout << "  GPU: " << (cfg.use_gpu ? "yes" : "no") << "\n";
+    std::cout << "  Charset: " << cfg.charset << "\n";
 
     if (cfg.mode == "dict") {
         std::cout << "  Wordlist: " << cfg.wordlist << "\n";
@@ -60,6 +61,7 @@ Metrics run_and_measure(Config cfg) {
         std::cout << "  discovered hash: " << "NOT FOUND" << std::endl;
     }
     
+    std::cout << "  complexity: " << cracker.getTotal() << std::endl;
     std::cout << "  seconds to crack: " << m.seconds << std::endl;
     std::cout << "  (ignore if early exit) hash/sec: " << m.hashes_per_sec << std::endl;
     std::cout << std::endl;
@@ -83,7 +85,11 @@ struct Config parse_args(int argc, char* argv[]) {
         } else if (arg == "--length") {
             cfg.length = std::stoi(argv[++i]);
         } else if (arg == "--charset") {
-            cfg.charset = argv[++i];
+            if (std::string(argv[i + 1]) == "advanced")
+                cfg.charset = "abcdefghijklmnopqrstuvwxyz!@*$";
+            else if (std::string(argv[i + 1]) == "ultra")
+                cfg.charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@*$";
+            ++i;
         } else if (arg == "--target_digest") {
             cfg.target_digest = argv[++i];
         } else if (arg == "--rules") {

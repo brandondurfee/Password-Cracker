@@ -99,3 +99,8 @@ Mon Apr 27 19:14:40 2026
 |  No running processes found                                                             |
 +-----------------------------------------------------------------------------------------+
 ```
+
+
+Default charset: abcdefghijklmnopqrstuvwxyz
+
+ABCDEFGHIJKLMNOPQRSTUVWXYZ*@!$
