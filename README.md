@@ -70,6 +70,9 @@ nvcc -Xcompiler -fopenmp main.cpp cuda_cracker.cu attack.cpp dict.cpp utils.cpp 
 
 2. Use dictionary attack on the CPU with rockyou.txt wordlist and basic rules
 ```bash
+[bdurfee3@atl1-1-03-014-30-0 passwordcracker]$ echo -n 'gr8c4tch' | md5sum
+9f748013af895cce7c56044e75ea3a96
+
 [bdurfee3@atl1-1-03-015-2-0 passwordcracker]$  ./cracker --mode dict  --target_digest 9f748013af895cce7c56044e75ea3a96 --wordlist /home/hice1/bdurfee3/ECE6122/final/passwordcracker/rockyou.txt --rules basic
 
 ***CONFIG***
@@ -92,6 +95,9 @@ nvcc -Xcompiler -fopenmp main.cpp cuda_cracker.cu attack.cpp dict.cpp utils.cpp 
 
 3. Use brute force attack on GPU with the ultra charset to crack 'Bs*Z@a$'
 ```bash
+[bdurfee3@atl1-1-03-014-30-0 passwordcracker]$ echo -n 'Bs*Z@a$' | md5sum
+6ce8bf115790c2464b4d5028f264aacb 
+
 [bdurfee3@atl1-1-03-015-2-0 passwordcracker]$ ./cracker --mode brute --target_digest 6ce8bf115790c2464b4d5028f264aacb --gpu --charset ultra --length 7
 
 ***CONFIG***
